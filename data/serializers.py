@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, FriendRequest, Topic, Post, PostLike, Notification
+from .models import User, FriendRequest, Post, PostLike, Notification
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,12 +54,6 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         fields = ['id', 'from_user', 'to_user', 'status', 'timestamp']
 
 
-class TopicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Topic
-        fields = ['id', 'name', 'sentiment']
-
-
 class PostLikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostLike
@@ -68,26 +62,11 @@ class PostLikeSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
-    topics = TopicSerializer(many=True)  # <-- Fix here
 
     class Meta:
         model = Post
         fields = ['id', 'author', 'content', 'topics', 'created_at', 'likes']
-
-    
-    def create(self, validated_data):
-        topics_data = validated_data.pop('topics', [])
-        validated_data.pop('author', None)  # Ensure 'author' is not duplicated
-
-        post = Post.objects.create(author=self.context['request'].user, **validated_data)
-
-        for topic_data in topics_data:
-            topic, _ = Topic.objects.get_or_create(
-                name=topic_data['name'],
-                sentiment=topic_data['sentiment']
-            )
-            post.topics.add(topic)
-        return post
+        read_only_fields = ['author', 'likes']
 
 
 class NotificationSerializer(serializers.ModelSerializer):

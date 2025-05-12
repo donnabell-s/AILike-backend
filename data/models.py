@@ -26,15 +26,10 @@ class FriendRequest(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 
-class Topic(models.Model):
-    name = models.CharField(max_length=100)
-    sentiment = models.CharField(max_length=20)  # E.g., positive/neutral/negative
-
-
 class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
     content = models.TextField()
-    topics = models.ManyToManyField(Topic, related_name='posts', blank=True)  # Allow multiple topics per post
+    topics = models.JSONField(default=list, blank=True)  # Works with MySQL 5.7+ and Django 4.0+
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='liked_posts', through='PostLike')
 

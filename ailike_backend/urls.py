@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from data.views import UserDetailView, RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, TopicListView, TopicListView, NotificationListView
+from data.views import UserDetailView, RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,7 +30,6 @@ urlpatterns = [
     path('api/friends/', FriendsListView.as_view(), name='friend-list'),
     path('api/posts/', PostListCreateView.as_view(), name='post-list-create'),
     path('api/posts/<int:post_id>/like/', LikePostView.as_view(), name='like-post'),
-    path('api/topics/', TopicListView.as_view(), name='topic-list'),
     path('api/notifications/', NotificationListView.as_view(), name='notification-list'),
     path('api/notifications/<int:pk>/', NotificationListView.as_view(), name='notification-update'),
 ]

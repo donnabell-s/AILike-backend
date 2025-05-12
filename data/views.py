@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import User, FriendRequest, Topic, Post, PostLike, Notification
+from .models import User, FriendRequest, Post, PostLike, Notification
 from .serializers import *
 from .permissions import IsOwnerOrReadOnly
 from django.db.models import Q
@@ -169,12 +169,6 @@ class LikePostView(APIView):
             return Response({'error': 'You have not liked this post'}, status=400)
         like.delete()
         return Response({'message': 'Post unliked'}, status=204)
-
-
-class TopicListView(generics.ListCreateAPIView):
-    queryset = Topic.objects.all()
-    serializer_class = TopicSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 
 class NotificationListView(generics.ListAPIView):

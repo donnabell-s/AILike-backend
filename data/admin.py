@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Post, FriendRequest, Topic, PostLike, Notification
+from .models import User, Post, FriendRequest, PostLike, Notification
 from django.contrib.auth.admin import UserAdmin
 
 class CustomUserAdmin(UserAdmin):
@@ -13,6 +13,5 @@ admin.site.register(User, CustomUserAdmin)
 
 admin.site.register(Post)
 admin.site.register(FriendRequest)
-admin.site.register(Topic)
 admin.site.register(PostLike)
 admin.site.register(Notification)
