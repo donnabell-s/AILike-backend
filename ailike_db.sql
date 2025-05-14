@@ -1,7 +1,8 @@
-create database ailike;
+-- create database ailike;
 use ailike;
+SHOW VARIABLES LIKE 'character_set%';
 
-SHOW TABLES IN ailike;
+-- SHOW TABLES IN ailike;
 
 select * from data_user;
 select * from data_friendrequest;

@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 
 class CustomUserAdmin(UserAdmin):
     model = User
-    list_display = ('username', 'email', 'first_name', 'last_name', 'pronouns', 'date_of_birth', 'is_staff')
+    list_display = ('username','bio', 'email', 'first_name', 'last_name', 'pronouns', 'date_of_birth', 'is_staff')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups')
     search_fields = ('username', 'email')
     ordering = ('username',)

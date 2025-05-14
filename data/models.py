@@ -15,7 +15,6 @@ class User(AbstractUser):
     profile_picture_blob = models.BinaryField(null=True, blank=True)
     header_picture_blob = models.BinaryField(null=True, blank=True)
 
-
 class FriendRequest(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),

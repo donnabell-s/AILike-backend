@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from data.views import UserDetailView, UserListView, CurrentUserView, UserProfilePictureView, UserHeaderPictureView ,RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView
+from nlp.views import TestSummarizerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -36,4 +37,7 @@ urlpatterns = [
     path('api/posts/<int:post_id>/like/', LikePostView.as_view(), name='like-post'),
     path('api/notifications/', NotificationListView.as_view(), name='notification-list'),
     path('api/notifications/<int:pk>/', NotificationListView.as_view(), name='notification-update-delete'),
+    path('api/notifications/<int:pk>/', NotificationListView.as_view(), name='notification-update'),
+
+    path('api/summarize/<int:user_id>', TestSummarizerView.as_view(), name='test-summarizer'),
 ]

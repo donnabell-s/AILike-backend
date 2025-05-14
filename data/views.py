@@ -7,7 +7,7 @@ from .permissions import IsOwnerOrReadOnly
 from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
-
+from nlp.summarizer import patch_bio
 
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
@@ -168,7 +168,12 @@ class PostListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        post = serializer.save(author=self.request.user)
+        
+        try:
+           patch_bio(post.author.id) 
+        except Exception as e:
+            print(f"Error while summarizing bio for user {post.author.id}: {e}")
 
 
 
