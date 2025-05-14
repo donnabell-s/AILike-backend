@@ -5,6 +5,9 @@ from .models import User, FriendRequest, Post, PostLike, Notification
 from .serializers import *
 from .permissions import IsOwnerOrReadOnly
 from django.db.models import Q
+from django.http import HttpResponse, Http404
+from django.shortcuts import get_object_or_404
+
 
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
@@ -23,6 +26,20 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+    
+class UserProfilePictureView(APIView):
+    def get(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        if user.profile_picture_blob:
+            return HttpResponse(user.profile_picture_blob, content_type="image/png")
+        raise Http404
+
+class UserHeaderPictureView(APIView):
+    def get(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        if user.header_picture_blob:
+            return HttpResponse(user.header_picture_blob, content_type="image/png")
+        raise Http404
 
 
 class RegisterView(APIView):

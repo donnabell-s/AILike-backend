@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from data.views import UserDetailView, UserListView, CurrentUserView, RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView
+from data.views import UserDetailView, UserListView, CurrentUserView, UserProfilePictureView, UserHeaderPictureView ,RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,7 +26,9 @@ urlpatterns = [
     path('api/register/', RegisterView.as_view(), name='register'),
     path('api/users/', UserListView.as_view(), name='user-list'), 
     path('api/users/<int:pk>/', UserDetailView.as_view(), name='user-detail-id'),  
-    path('api/user/', CurrentUserView.as_view(), name='current-user'),  # Me
+    path('api/user/', CurrentUserView.as_view(), name='current-user'),
+    path('api/users/<int:pk>/profile_picture/', UserProfilePictureView.as_view(), name='user-profile-picture'),
+    path('api/users/<int:pk>/header_picture/', UserHeaderPictureView.as_view(), name='user-header-picture'),
     path('api/friends/requests/', FriendRequestView.as_view(), name='friend-request'),
     path('api/friends/requests/<int:pk>/', FriendRequestView.as_view(), name='friend-request-respond'),
     path('api/friends/', FriendsListView.as_view(), name='friend-list'),

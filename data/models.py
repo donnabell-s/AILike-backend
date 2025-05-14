@@ -10,7 +10,10 @@ class User(AbstractUser):
 
     pronouns = models.CharField(max_length=20, choices=PRONOUN_CHOICES, default='they/them', blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
-    bio = models.TextField(blank=True, null=True)  # NLP generated
+    bio = models.TextField(blank=True, null=True)
+    
+    profile_picture_blob = models.BinaryField(null=True, blank=True)
+    header_picture_blob = models.BinaryField(null=True, blank=True)
 
 
 class FriendRequest(models.Model):

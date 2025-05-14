@@ -7,9 +7,12 @@ class UserSerializer(serializers.ModelSerializer):
     friend_count = serializers.SerializerMethodField()
     post_like_count = serializers.SerializerMethodField()
 
+    profile_picture = serializers.ImageField(write_only=True, required=False)
+    header_picture = serializers.ImageField(write_only=True, required=False)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'pronouns', 'first_name', 'last_name', 'date_of_birth', 'bio', 'post_count', 'friend_count', 'post_like_count', 'is_staff']
+        fields = ['id', 'username', 'email', 'pronouns', 'first_name', 'last_name', 'date_of_birth', 'bio', 'profile_picture', 'header_picture', 'post_count', 'friend_count', 'post_like_count', 'is_staff']
 
     def get_post_count(self, obj):
         return obj.posts.count()
@@ -25,6 +28,27 @@ class UserSerializer(serializers.ModelSerializer):
     
     def get_post_like_count(self, obj):
         return PostLike.objects.filter(post__author=obj).count()
+    
+    def get_profile_picture_url(self, obj):
+        return f'/api/users/{obj.id}/profile_picture/' if obj.profile_picture_blob else None
+
+    def get_header_picture_url(self, obj):
+        return f'/api/users/{obj.id}/header_picture/' if obj.header_picture_blob else None
+    
+    def update(self, instance, validated_data):
+        if 'profile_picture' in validated_data:
+            picture = validated_data.pop('profile_picture')
+            instance.profile_picture_blob = picture.read()
+
+        if 'header_picture' in validated_data:
+            header = validated_data.pop('header_picture')
+            instance.header_picture_blob = header.read()
+
+        # Save after assigning blobs
+        instance.save()
+
+        return super().update(instance, validated_data)
+
 
 
 class RegisterSerializer(serializers.ModelSerializer):
