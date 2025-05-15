@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import json
+
 
 class User(AbstractUser):
     PRONOUN_CHOICES = [
@@ -14,7 +16,7 @@ class User(AbstractUser):
     
     profile_picture_blob = models.BinaryField(null=True, blank=True)
     header_picture_blob = models.BinaryField(null=True, blank=True)
-
+  
 class FriendRequest(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -53,3 +55,21 @@ class Notification(models.Model):
         ('like', 'Like'),
     ]
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+
+class VectorEmbeddings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    embedding = models.TextField() 
+
+    def set_embedding(self, vector):
+        """Helper method to set the embedding as a JSON-encoded string."""
+        self.embedding = json.dumps(vector)
+        self.save()
+
+    def get_embedding(self):
+        """Helper method to retrieve the embedding from the JSON string."""
+        return json.loads(self.embedding)
+
+    def __str__(self):
+        return f"Embedding for {self.user.username}"
+
+
