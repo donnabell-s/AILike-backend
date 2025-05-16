@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from data.models import Post, User
 from .summarizer import summarize_bio, patch_bio
 
+
 # Create your views here.
     
 class TestSummarizerView(APIView):

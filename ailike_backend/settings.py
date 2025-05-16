@@ -40,7 +40,7 @@ SECRET_KEY = 'django-insecure-oysdyjy3fa$qh46&jq!oa@n4r75t&97l&@^(zf9ox@q!=j@+te
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'LAPTOP-NG3KFS9T']
 
 
 # Application definition
@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'data',
+    'nlp_2',
 ]
 
 REST_FRAMEWORK = {
@@ -119,7 +120,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'ailike',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': 'your_password',
         'HOST': 'localhost',
         'PORT': '3306',
     }

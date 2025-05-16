@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from data.views import UserDetailView, UserListView, CurrentUserView, UserProfilePictureView, UserHeaderPictureView ,RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView
 from nlp.views import TestSummarizerView
@@ -40,4 +40,8 @@ urlpatterns = [
     path('api/notifications/<int:pk>/', NotificationListView.as_view(), name='notification-update'),
 
     path('api/summarize/<int:user_id>', TestSummarizerView.as_view(), name='test-summarizer'),
+    path('api/nlp/', include('nlp_2.urls')),
+]
+INSTALLED_APPS = [
+    'nlp',
 ]
