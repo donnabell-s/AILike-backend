@@ -1,50 +1,70 @@
-from data.models import User, UserMatch, UserEmbedding
+from data.models import User, UserMatch, UserEmbedding,Post
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity as cosine_similarity
 import numpy as np
 
-# Load embedding model once
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# ✅ Convert sentiment score into descriptive phrase
-def sentiment_to_phrase(topic, intensity):
-    if intensity >= 0.90:
-        return f"I absolutely love {topic}."
-    elif intensity >= 0.70:
-        return f"I really enjoy {topic}."
-    elif intensity >= 0.50:
-        return f"I like {topic}."
-    elif intensity >= 0.30:
-        return f"I feel okay about {topic}."
-    else:
-        return f"{topic} is alright."
-
-# ✅ Convert a user's topic-sentiment dictionary into a vector
-def user_profile_embedding(user_topics: dict):
-    phrases = [sentiment_to_phrase(topic, score) for topic, score in user_topics.items()]
-    vectors = [embedding_model.encode(p) for p in phrases]
-    return np.mean(vectors, axis=0)  # Averaged user vector
-
-# ✅ Compute cosine similarity between two user IDs (for debug/testing)
-def cosine_similarity(user1_id, user2_id):
+#EMBEDDING PROCESS
+def auto_profile_embedding(user_id): #MAIN CALL
     try:
-        user1 = User.objects.get(id=user1_id)
-        user2 = User.objects.get(id=user2_id)
-
-        profile1 = user1.profile_data  # Replace with actual data source
-        profile2 = user2.profile_data
-
-        emb1 = user_profile_embedding(profile1).reshape(1, -1)
-        emb2 = user_profile_embedding(profile2).reshape(1, -1)
-
-        similarity = sklearn_cosine_similarity(emb1, emb2)
-        return round(similarity[0][0], 4)
-
+        user = User.objects.get(id=user_id)
+        user_posts = Post.objects.filter(author=user_id)
     except User.DoesNotExist:
-        return "One or both users not found."
+        return {"error": "User not found."}
 
-# ✅ Compute and store top 10 matches in UserMatch table
-def top_10_matches_and_save(user_id):
+    # Aggregate all topics from all posts
+    all_topics = []
+    for post in user_posts:
+        all_topics.extend(post.topics)  # topics is a list of [topic, score]
+
+    # Create new embedding from combined topics cuz unfortunately cant embed on existinf vectors
+    embedding_vector = profile_embedding(all_topics)
+    if embedding_vector is None:
+        return {"error": "No topics found to embed."}
+
+    # Save/update UserEmbedding
+    user_embedding, created = UserEmbedding.objects.get_or_create(user=user)
+    user_embedding.set_embedding(embedding_vector.tolist())
+    user_embedding.save()
+
+    return {
+        "status": "success",
+        "user_id": user.id,
+        "username": user.username,
+        "created": created,
+        "embedding": embedding_vector.tolist()
+    }
+
+
+def profile_embedding(topics):
+    #process: get 2d array of topics and scores then reformat to sentences for embedding
+    #vector is the embedded date then save to Userembedding model of that user
+    phrases = [sentiment_to_phrase(topic, score) for topic, score in topics]
+    vectors = [embedding_model.encode(p) for p in phrases]
+    return np.mean(vectors, axis=0) if vectors else None
+
+def sentiment_to_phrase(topic, intensity):
+    if intensity >= 0.95:
+        return f"I absolutely love {topic}."
+    elif intensity >= 0.80:
+        return f"I really enjoy {topic}."
+    elif intensity >= 0.60:
+        return f"I like {topic}."
+    elif intensity >= 0.45:
+        return f"I'm neutral about {topic}."
+    elif intensity >= 0.30:
+        return f"I'm indifferent to {topic}."
+    elif intensity >= 0.15:
+        return f"I really dislike {topic}."
+    else:
+        return f"I loathe {topic}."
+    
+ 
+
+
+#MATCHING PROCESS
+def top_10_matches_and_save(user_id): #MAIN CALL
     try:
         # Get this user's embedding
         user_embedding_obj = UserEmbedding.objects.get(user__id=user_id)
@@ -56,7 +76,7 @@ def top_10_matches_and_save(user_id):
         for other_embedding in UserEmbedding.objects.exclude(user__id=user_id).select_related('user').order_by('user__id'):
             other_user = other_embedding.user
             other_emb = np.array(other_embedding.get_embedding()).reshape(1, -1)
-            sim = sklearn_cosine_similarity(user_emb, other_emb)[0][0]
+            sim = cosine_similarity(user_emb, other_emb)[0][0]
 
             similarities.append({
                 "user": other_user,
@@ -65,7 +85,6 @@ def top_10_matches_and_save(user_id):
 
         # Sort and get top 10
         top_matches = sorted(similarities, key=lambda x: x["similarity"], reverse=True)[:10]
-
         # Clear existing matches first
         UserMatch.objects.filter(user_id=user_id).delete()
 
@@ -76,7 +95,6 @@ def top_10_matches_and_save(user_id):
                 matched_user=match["user"],
                 similarity_score=match["similarity"]
             )
-
         return [{
             "user_id": match["user"].id,
             "username": match["user"].username,
@@ -85,3 +103,19 @@ def top_10_matches_and_save(user_id):
 
     except UserEmbedding.DoesNotExist:
         return "User embedding not found."
+
+# ✅ Compute cosine similarity between two user IDs
+def cosine_similarity(user1_id, user2_id):
+    try:
+        user1_emb = UserEmbedding.objects.get(user__id=user1_id)
+        user2_emb = UserEmbedding.objects.get(user__id=user2_id)
+
+        emb1 = np.array(user1_emb.get_embedding()).reshape(1, -1)
+        emb2 = np.array(user2_emb.get_embedding()).reshape(1, -1)
+
+        similarity = cosine_similarity(emb1, emb2)[0][0]
+        return round(similarity, 4)
+
+    except UserEmbedding.DoesNotExist:
+        return "One or both user embeddings not found."
+

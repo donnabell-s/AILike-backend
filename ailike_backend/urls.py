@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from data.views import UserDetailView, UserListView, CurrentUserView, UserProfilePictureView, UserHeaderPictureView ,RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView
-from nlp.views import TestSummarizerView, TestTopicClassifier
+from nlp.views import TestCosineSimilarityView,TestEmbeddingView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -39,6 +39,6 @@ urlpatterns = [
     path('api/notifications/<int:pk>/', NotificationListView.as_view(), name='notification-update-delete'),
     path('api/notifications/<int:pk>/', NotificationListView.as_view(), name='notification-update'),
 
-    path('api/summarize/<int:user_id>', TestSummarizerView.as_view(), name='test-summarizer'),
-    path('api/classify/<int:post_id>', TestTopicClassifier.as_view(), name='test-classifier'),
+    path('api/embedding/<int:user_id>', TestEmbeddingView.as_view(), name='test-embedding'),
+    path('api/match/<int:user1_id>/<int:user2_id>', TestCosineSimilarityView.as_view(), name='test-matching'),
 ]
