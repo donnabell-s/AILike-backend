@@ -21,16 +21,14 @@ def analyze_post(request):
     except Post.DoesNotExist:
         return Response({"error": "Post not found"}, status=404)
 
-    # 1. Sentiment Analysis
     sentiment_result = sentiment_pipeline(post.content)[0]
     sentiment = sentiment_result["label"].lower()
     score = round(sentiment_result["score"], 3)
 
-    # 2. Topic Classification (use your classmate's function)
     topics = topic_classifier(post_id)
 
     return Response({
         "sentiment": sentiment,
         "score": score,
-        "topics": topics  # already top 3
+        "topics": topics  
     })
