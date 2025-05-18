@@ -56,20 +56,32 @@ class Notification(models.Model):
     ]
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
 
-class VectorEmbeddings(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    embedding = models.TextField() 
+class UserEmbedding(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='embedding')
+    embedding_json = models.TextField(help_text="JSON-encoded embedding vector")
 
     def set_embedding(self, vector):
-        """Helper method to set the embedding as a JSON-encoded string."""
-        self.embedding = json.dumps(vector)
+        """Store embedding vector as JSON string."""
+        self.embedding_json = json.dumps(vector)
         self.save()
 
     def get_embedding(self):
-        """Helper method to retrieve the embedding from the JSON string."""
-        return json.loads(self.embedding)
+        """Return embedding vector as Python list."""
+        return json.loads(self.embedding_json)
 
     def __str__(self):
         return f"Embedding for {self.user.username}"
 
 
+class UserMatch(models.Model):
+    user = models.ForeignKey(User, related_name='matches', on_delete=models.CASCADE)
+    matched_user = models.ForeignKey(User, related_name='matched_by', on_delete=models.CASCADE)
+    similarity_score = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'matched_user')
+        ordering = ['-similarity_score']
+
+    def __str__(self):
+        return f"{self.user.username} matched with {self.matched_user.username} ({self.similarity_score:.3f})"
