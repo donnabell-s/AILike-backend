@@ -172,32 +172,60 @@ class PostListCreateView(generics.ListCreateAPIView):
 
 
 
+# class LikePostView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
+#     def post(self, request, post_id):
+#         post = Post.objects.filter(id=post_id).first()
+#         if not post:
+#             return Response({'error': 'Post not found'}, status=404)
+#         like, created = PostLike.objects.get_or_create(post=post, user=request.user)
+#         if not created:
+#             return Response({'message': 'Already liked'}, status=200)
+#         if post.author != request.user:
+#             Notification.objects.create(
+#                 user=post.author,  # recipient
+#                 from_user=request.user,  # sender
+#                 message=f"@{request.user.username} liked your post.",
+#                 type='like'
+#             )
+#         return Response({'message': 'Post liked'}, status=201)
+#     def delete(self, request, post_id):
+#         post = Post.objects.filter(id=post_id).first()
+#         if not post:
+#             return Response({'error': 'Post not found'}, status=404)
+#         like = PostLike.objects.filter(post=post, user=request.user).first()
+#         if not like:
+#             return Response({'error': 'You have not liked this post'}, status=400)
+#         like.delete()
+#         return Response({'message': 'Post unliked'}, status=204)
+
 class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request, post_id):
         post = Post.objects.filter(id=post_id).first()
         if not post:
             return Response({'error': 'Post not found'}, status=404)
-        like, created = PostLike.objects.get_or_create(post=post, user=request.user)
-        if not created:
-            return Response({'message': 'Already liked'}, status=200)
+
+        like = PostLike.objects.filter(post=post, user=request.user).first()
+        if like:
+            # User already liked it — remove like (toggle off)
+            like.delete()
+            return Response({'message': 'Post unliked'}, status=200)
+
+        # Not liked yet — add like (toggle on)
+        PostLike.objects.create(post=post, user=request.user)
+
         if post.author != request.user:
             Notification.objects.create(
-                user=post.author,  # recipient
-                from_user=request.user,  # sender
+                user=post.author,
+                from_user=request.user,
                 message=f"@{request.user.username} liked your post.",
                 type='like'
             )
+
         return Response({'message': 'Post liked'}, status=201)
-    def delete(self, request, post_id):
-        post = Post.objects.filter(id=post_id).first()
-        if not post:
-            return Response({'error': 'Post not found'}, status=404)
-        like = PostLike.objects.filter(post=post, user=request.user).first()
-        if not like:
-            return Response({'error': 'You have not liked this post'}, status=400)
-        like.delete()
-        return Response({'message': 'Post unliked'}, status=204)
+
 
 
 class NotificationListView(generics.ListAPIView):

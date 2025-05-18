@@ -78,7 +78,7 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'pronouns', 'date_of_birth', 'profile_picture_blob', 'header_picture_blob']
+        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'pronouns', 'date_of_birth', 'profile_picture_blob', 'header_picture_blob', 'bio']
 
 
 
@@ -93,6 +93,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
             pronouns=validated_data.get('pronouns', ''),
             date_of_birth=validated_data.get('date_of_birth', None),
+            bio=validated_data.get('bio', "Welcome to my profile! Let's be friends :)"),
         )
 
         # Set default profile and header pictures if not provided
