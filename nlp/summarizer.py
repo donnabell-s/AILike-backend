@@ -37,12 +37,18 @@ def summarize_bio(user_id):
     posts_content = "\n".join([post.content for post in user_posts])
     
     prompt = (
-       f"""Based on the following user-generated posts, write a witty, slightly roasty, third-person dating app bio under 30 words.
-        It should highlight what they like, their personality traits, and any funny quirks or contradictions — but do **not invent** any facts or traits not clearly present in the posts or biography.
-        Use only the following verified information:
-        - Biography: {pronouns}, {bday}, {full_name}
+      f"""Based on the following user-generated posts, write a witty, slightly roasty, third-person social media app bio under 30 words.
+        Highlight what they like, their personality traits, and any funny quirks or contradictions — but do **not invent** anything that isn't clearly stated in the posts or biography.
+
+        Use only the following verifiable information:
+        - Pronouns: {pronouns}
+        - Birthday: {bday}
+        - Full name: {full_name}
         - Posts: {posts_content}
-        Keep it playful, insightful, and accurate. Output only the final bio text."""
+
+        You may include the user's name **only if it fits naturally into the tone and flow** of the bio — avoid forced or robotic use.
+
+        Integrate pronouns naturally into the sentence structure. Keep the tone playful, insightful, and accurate. Output only the final bio text."""
 
     )
     # print(f"Generated Prompt for Summarization: \n{prompt}\n")
