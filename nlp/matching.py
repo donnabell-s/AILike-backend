@@ -2,28 +2,18 @@ from data.models import Post, User
 from django.core.exceptions import ObjectDoesNotExist
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine_similarity
-import numpy as np
 from transformers import pipeline
+import numpy as np
 import os
-sentiment_pipeline = pipeline("sentiment-analysis")  # ✅ loaded once
 
 
-
-# Avoid using TensorFlow if unnecessary (since Keras 3 is incompatible)
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 
-# ✅ Load models ONCE and reuse them (they’ll load from cache if already downloaded)
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-topic_classifier_pipeline = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-sentiment_pipeline = pipeline("sentiment-analysis")
+sentiment_pipeline = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
+topic_pipeline = pipeline("zero-shot-classification", model="MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli")
 
-# ✅ Topic classifier
-def topic_classifier(post_id):
-    try:
-        post = Post.objects.get(id=post_id)
-        content = post.content
-
-        candidate_labels = [
+topic_labels = [
             "Technology", "Health", "Politics", "Sports", "Entertainment",
             "Education", "Business", "Environment", "Fashion", "Travel",
             "Food", "Science", "Gaming", "Finance", "Relationships",
@@ -39,39 +29,41 @@ def topic_classifier(post_id):
             "Birds", "Reptiles", "Fish", "Rodents", "Animals", "Humor", "Emotions",
             "Mental Health", "Education", "School Life", "Rants",
             "Frustration", "Student Experience", "Classmates", "Venting", "Conflict",
+]
+
+def topic_classifier(post_id, threshold=0.5):
+    try:
+        post = Post.objects.get(id=post_id)
+        content = post.content
+
+        result = topic_pipeline(content, candidate_labels=topic_labels, multi_label=True)
+
+        filtered_topics = [
+            label for label, score in zip(result["labels"], result["scores"]) if score >= threshold
         ]
 
-        result = topic_classifier_pipeline(content, candidate_labels)
-        return result['labels'][:5]  # Return top predicted label
+        return filtered_topics if filtered_topics else ["No strong topic match"]
 
     except Post.DoesNotExist:
         return "Post not found."
 
-# ✅ Sentiment analyzer
 def sentiment_analyzer(post_id):
     try:
         post = Post.objects.get(id=post_id)
-        post_text = post.content
-
-        sentiment = sentiment_pipeline(post_text)
-        return sentiment[0]['label']  # e.g., 'POSITIVE', 'NEGATIVE', etc.
-
+        sentiment = sentiment_pipeline(post.content)
+        return sentiment[0]['label']
     except Post.DoesNotExist:
         return "Post not found."
 
-# ✅ Embedding function
+
 def vector_embedding(post_id):
     try:
         post = Post.objects.get(id=post_id)
-        post_text = post.content
-
-        embedding = embedding_model.encode(post_text)
-        return embedding
-
+        return embedding_model.encode(post.content)
     except Post.DoesNotExist:
         return "Post not found."
 
-# ✅ Convert sentiment intensity to phrase
+
 def sentiment_to_phrase(topic, intensity):
     if intensity >= 90:
         return f"I absolutely love {topic}."
@@ -84,19 +76,16 @@ def sentiment_to_phrase(topic, intensity):
     else:
         return f"{topic} is alright."
 
-# ✅ Cosine similarity
+
+
 def cosine_similarity():
-    user1 = User.objects.get(id=1)
-    User2 = User.objects.get(id=2)
     try:
-        embedding1 = vector_embedding(post_id1)
-        embedding2 = vector_embedding(post_id2)
-
-        embedding1 = np.array(embedding1).reshape(1, -1)
-        embedding2 = np.array(embedding2).reshape(1, -1)
-
-        similarity = sklearn_cosine_similarity(embedding1, embedding2)
+        embedding1 = vector_embedding(1)
+        embedding2 = vector_embedding(2)
+        similarity = sklearn_cosine_similarity(
+            np.array(embedding1).reshape(1, -1),
+            np.array(embedding2).reshape(1, -1)
+        )
         return similarity[0][0]
-
-    except Post.DoesNotExist:
+    except:
         return "One or both posts not found."
