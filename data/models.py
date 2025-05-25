@@ -54,3 +54,20 @@ class Notification(models.Model):
         ('like', 'Like'),
     ]
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+
+class Post(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    content = models.TextField()
+    topics = models.JSONField(default=list, blank=True)
+    sentiment = models.CharField(max_length=20, blank=True, null=True)  # 👈 ADD THIS
+    created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(User, related_name='liked_posts', through='PostLike')
+
+class Post(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    content = models.TextField()
+    topics = models.JSONField(default=list, blank=True)
+    sentiment = models.CharField(max_length=20, blank=True, null=True)        # already added
+    sentiment_score = models.FloatField(blank=True, null=True)                # 👈 ADD THIS
+    created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(User, related_name='liked_posts', through='PostLike')
