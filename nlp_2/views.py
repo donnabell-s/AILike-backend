@@ -1,34 +1,22 @@
-from django.shortcuts import render
+@api_view(["GET"])
+def all_post_analysis(request):
+    from transformers import pipeline
 
-# Create your views here.
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from transformers import pipeline
-from nlp.matching import topic_classifier
-from data.models import Post
+    sentiment_pipeline = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
+    from nlp.matching import topic_classifier
+    from data.models import Post
 
-# Load once
-sentiment_pipeline = pipeline("sentiment-analysis")
+    result = []
 
-@api_view(["POST"])
-def analyze_post(request):
-    post_id = request.data.get("post_id")
-    if not post_id:
-        return Response({"error": "Missing post_id"}, status=400)
+    for post in Post.objects.all():
+        sentiment_result = sentiment_pipeline(post.content)[0]
+        sentiment = sentiment_result["label"]
+        topics = topic_classifier(post.id)
 
-    try:
-        post = Post.objects.get(id=post_id)
-    except Post.DoesNotExist:
-        return Response({"error": "Post not found"}, status=404)
+        result.append([
+            post.id,
+            topics,
+            sentiment
+        ])
 
-    sentiment_result = sentiment_pipeline(post.content)[0]
-    sentiment = sentiment_result["label"].lower()
-    score = round(sentiment_result["score"], 3)
-
-    topics = topic_classifier(post_id)
-
-    return Response({
-        "sentiment": sentiment,
-        "score": score,
-        "topics": topics  
-    })
+    return Response(result)
