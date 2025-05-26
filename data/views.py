@@ -184,10 +184,10 @@ class PostListCreateView(generics.ListCreateAPIView):
         post = serializer.save(author=self.request.user)
         
         try:
-           patch_bio(post.author.id) 
-           analyze_post_content(post)
-           auto_profile_embedding(post.author.id)
-
+            patch_bio(post.author.id) 
+            analyze_post_content(post)
+            auto_profile_embedding(post.author.id)
+            top_10_matches_and_save(post.author.id)
         except Exception as e:
              print("Error updating profile embedding:", e)
 
