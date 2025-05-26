@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.views import View
-from grpc import Status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from data.models import Post, User,UserEmbedding
