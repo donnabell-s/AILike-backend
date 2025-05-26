@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import User, FriendRequest, Post, PostLike, Notification
+from .models import User, FriendRequest, Post, PostLike, Notification, Topic
 from .serializers import *
 from .permissions import IsOwnerOrReadOnly
 from django.db.models import Q
@@ -185,6 +185,16 @@ class PostListCreateView(generics.ListCreateAPIView):
            patch_bio(post.author.id) 
         except Exception as e:
             print(f"Error while summarizing bio for user {post.author.id}: {e}")
+
+class TopicListCreateView(generics.ListCreateAPIView):
+    queryset = Topic.objects.all().order_by('name')
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class TopicRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 
