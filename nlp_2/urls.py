@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import all_post_analysis
+from .views import analyze_post_content
 
 urlpatterns = [
-    path("all-posts/", all_post_analysis),  
+    path("all-posts/", analyze_post_content),  
 ]

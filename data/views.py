@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from nlp.summarizer import patch_bio
+from nlp_2.views import analyze_post_content
 from django.utils import timezone
 
 
@@ -176,15 +177,18 @@ class FriendsListView(APIView):
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    # permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
         
         try:
            patch_bio(post.author.id) 
+           analyze_post_content(post)
+
         except Exception as e:
             print(f"Error while summarizing bio for user {post.author.id}: {e}")
+
 
 class TopicListCreateView(generics.ListCreateAPIView):
     queryset = Topic.objects.all().order_by('name')
