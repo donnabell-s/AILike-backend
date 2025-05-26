@@ -1,13 +1,17 @@
 from rest_framework import generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import User, FriendRequest, Post, PostLike, Notification
+from .models import User, FriendRequest, Post, PostLike, Notification, Topic
 from .serializers import *
 from .permissions import IsOwnerOrReadOnly
 from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from nlp.matching import auto_profile_embedding,top_10_matches_and_save
+from nlp.summarizer import patch_bio
+from nlp_2.views import analyze_post_content
+from django.utils import timezone
+
 
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
@@ -105,25 +109,34 @@ class FriendRequestView(APIView):
         serializer = FriendRequestSerializer(friend_request)
         return Response(serializer.data, status=201)
 
+
     def patch(self, request, pk):
-        """Respond to a friend request (accept/reject)"""
-        friend_request = FriendRequest.objects.filter(id=pk, to_user=request.user).first()
+        """Respond to a friend request (accept/reject or cancel if sender)"""
+        friend_request = FriendRequest.objects.filter(id=pk).first()
         if not friend_request:
-            return Response({'error': 'Friend request not found or you are not authorized to respond.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Friend request not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         status_value = request.data.get('status')
         if status_value not in ['accepted', 'rejected']:
             return Response({'error': 'Invalid status. Must be "accepted" or "rejected".'}, status=status.HTTP_400_BAD_REQUEST)
 
-        friend_request.status = status_value
-        friend_request.save()
+        # Accept/reject logic for recipient
+        if friend_request.to_user == request.user:
+            friend_request.status = status_value
+            friend_request.timestamp = timezone.now()  # Update timestamp manually
+            friend_request.save()
+            return Response(FriendRequestSerializer(friend_request).data, status=status.HTTP_200_OK)
 
-        if status_value == 'accepted':
-            # Optionally, you can create a notification or update friend counts here
-            pass
+        # Allow sender to cancel (rejected) only if still pending
+        if friend_request.from_user == request.user and friend_request.status == 'pending' and status_value == 'rejected':
+            friend_request.status = 'rejected'
+            friend_request.timestamp = timezone.now()  # Update timestamp manually
+            friend_request.save()
+            return Response(FriendRequestSerializer(friend_request).data, status=status.HTTP_200_OK)
 
-        return Response(FriendRequestSerializer(friend_request).data, status=status.HTTP_200_OK)
-    
+        return Response({'error': 'You are not authorized to update this request.'}, status=status.HTTP_403_FORBIDDEN)
+
+
     def delete(self, request, pk):
         """Unfriend a user (set the status to 'rejected')"""
         friend_request = FriendRequest.objects.filter(
@@ -165,11 +178,39 @@ class FriendsListView(APIView):
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    # permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
         
+        try:
+           patch_bio(post.author.id) 
+           analyze_post_content(post)
+
+        except Exception as e:
+            print(f"Error while summarizing bio for user {post.author.id}: {e}")
+
+
+class TopicListCreateView(generics.ListCreateAPIView):
+    queryset = Topic.objects.all().order_by('name')
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class TopicRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class TopicListCreateView(generics.ListCreateAPIView):
+    queryset = Topic.objects.all().order_by('name')
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class TopicRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
 
 
 class LikePostView(APIView):
@@ -198,6 +239,7 @@ class LikePostView(APIView):
             return Response({'error': 'You have not liked this post'}, status=400)
         like.delete()
         return Response({'message': 'Post unliked'}, status=204)
+
 
 
 class NotificationListView(generics.ListAPIView):

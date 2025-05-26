@@ -1,4 +1,10 @@
 .env
+<<<<<<< HEAD
 __pycache__/
 *.py[cod]
 *.pyo
+=======
+ailike_backend/__pycache__/
+
+*.pyc
+>>>>>>> be4f1735a143d155f1fb945191286c73cd4357f3

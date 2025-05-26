@@ -8,6 +8,7 @@ from .matching import auto_profile_embedding, cosine_similarity
 from rest_framework import status
 
 
+
 # Create your views here.
 class TestEmbeddingView(APIView):
     def get(self, request, user_id):

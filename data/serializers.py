@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import User, FriendRequest, Post, PostLike, Notification
+from django.core.files.base import ContentFile
+from django.core.files import File
+from django.conf import settings
+import os
+from .models import User, FriendRequest, Post, PostLike, Notification, Topic
+import os
+from django.conf import settings
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -51,12 +57,36 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 
+# class RegisterSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'pronouns', 'date_of_birth']
+
+#     def create(self, validated_data):
+#         user = User.objects.create_user(
+#             username=validated_data['username'],
+#             email=validated_data.get('email'),
+#             password=validated_data['password'],
+#             first_name=validated_data.get('first_name', ''),
+#             last_name=validated_data.get('last_name', ''),
+#             pronouns=validated_data.get('pronouns', ''),
+#             date_of_birth=validated_data.get('date_of_birth', None),
+#         )
+#         return user
+
+
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'pronouns', 'date_of_birth']
+        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'pronouns', 'date_of_birth', 'profile_picture_blob', 'header_picture_blob', 'bio']
+
+
 
     def create(self, validated_data):
+
+        # Create the user
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data.get('email'),
@@ -65,8 +95,24 @@ class RegisterSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
             pronouns=validated_data.get('pronouns', ''),
             date_of_birth=validated_data.get('date_of_birth', None),
+            bio=validated_data.get('bio', "Welcome to my profile! Let's be friends :)"),
         )
+
+        # Set default profile and header pictures if not provided
+        if 'profile_picture_blob' not in validated_data:
+            default_profile_picture_path = os.path.join(settings.MEDIA_ROOT, 'profile_picture.png')
+            with open(default_profile_picture_path, 'rb') as f:
+                user.profile_picture_blob = f.read()
+
+        if 'header_picture_blob' not in validated_data:
+            default_header_picture_path = os.path.join(settings.MEDIA_ROOT, 'header_picture.png')
+            with open(default_header_picture_path, 'rb') as f:
+                user.header_picture_blob = f.read()
+
+
+        user.save()  # Save the user instance with the new pictures
         return user
+
 
 
 class FriendRequestSerializer(serializers.ModelSerializer):
@@ -83,13 +129,23 @@ class PostLikeSerializer(serializers.ModelSerializer):
         model = PostLike
         fields = ['id', 'post', 'user', 'liked_at']
 
+class TopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Topic
+        fields = ['id', 'name', 'sentiment', 'sentiment_score']
+
 
 class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
+    topic_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Topic.objects.all(),
+        source='topics'  # maps to the actual M2M field
+    )
 
     class Meta:
         model = Post
-        fields = ['id', 'author', 'content', 'topics', 'created_at', 'likes']
+        fields = ['id', 'author', 'content', 'topic_ids', 'created_at', 'likes']
         read_only_fields = ['author', 'likes']
 
 
