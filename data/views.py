@@ -196,6 +196,16 @@ class TopicRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TopicSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+class TopicListCreateView(generics.ListCreateAPIView):
+    queryset = Topic.objects.all().order_by('name')
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class TopicRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
 
 
 class LikePostView(APIView):
