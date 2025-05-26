@@ -4,10 +4,11 @@ use ailike;
 SHOW TABLES IN ailike;
 
 select * from data_user;
-select * from data_friendrequest;
-select * from data_post;
+select * from data_topic;
+select * from data_post_topics;
+select * from data_userembedding;
 select * from data_postlike;
-select * from data_notification;
+select * from data_usermatch;
 
 ALTER TABLE data_notification AUTO_INCREMENT = 3;
 ALTER TABLE data_post AUTO_INCREMENT = 1;

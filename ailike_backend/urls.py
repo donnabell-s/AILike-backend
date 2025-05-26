@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from data.views import UserDetailView, UserListView,TopicListCreateView,TopicRetrieveUpdateDestroyView, CurrentUserView, UserProfilePictureView, UserHeaderPictureView ,RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView
-from nlp.views import TestCosineSimilarityView,TestEmbeddingView
+from nlp.views import TestCosineSimilarityView,TestEmbeddingView,TestGetMatches
 
 
 urlpatterns = [
@@ -44,6 +44,7 @@ urlpatterns = [
 
     path('api/embedding/<int:user_id>', TestEmbeddingView.as_view(), name='test-embedding'),
     path('api/match/<int:user1_id>/<int:user2_id>', TestCosineSimilarityView.as_view(), name='test-matching'),
+    path('api/match/<int:user_id>/', TestGetMatches.as_view(), name='test-matches'),
     path('api/nlp/', include('nlp_2.urls')),
 ]
 INSTALLED_APPS = [

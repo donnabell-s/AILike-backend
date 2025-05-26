@@ -186,9 +186,10 @@ class PostListCreateView(generics.ListCreateAPIView):
         try:
            patch_bio(post.author.id) 
            analyze_post_content(post)
+           auto_profile_embedding(post.author.id)
 
         except Exception as e:
-            print(f"Error while summarizing bio for user {post.author.id}: {e}")
+             print("Error updating profile embedding:", e)
 
 
 class TopicListCreateView(generics.ListCreateAPIView):
