@@ -37,7 +37,7 @@ def summarize_bio(user_id):
     posts_content = "\n".join([post.content for post in user_posts])
     
     prompt = (
-      f"""Based on the following user-generated posts, write a witty, slightly roasty, third-person social media app bio under 30 words.
+      f"""Based on the following user-generated posts, write a witty, slightly roasty, first-person social media app bio under 30 words.
         Highlight what they like, their personality traits, and any funny quirks or contradictions — but do **not invent** anything that isn't clearly stated in the posts or biography.
 
         Use only the following verifiable information:

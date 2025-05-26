@@ -8,6 +8,8 @@ from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from nlp.summarizer import patch_bio
+from django.utils import timezone
+
 
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
@@ -105,25 +107,6 @@ class FriendRequestView(APIView):
         serializer = FriendRequestSerializer(friend_request)
         return Response(serializer.data, status=201)
 
-    # def patch(self, request, pk):
-    #     """Respond to a friend request (accept/reject)"""
-    #     friend_request = FriendRequest.objects.filter(id=pk, to_user=request.user).first()
-    #     if not friend_request:
-    #         return Response({'error': 'Friend request not found or you are not authorized to respond.'}, status=status.HTTP_404_NOT_FOUND)
-
-    #     status_value = request.data.get('status')
-    #     if status_value not in ['accepted', 'rejected']:
-    #         return Response({'error': 'Invalid status. Must be "accepted" or "rejected".'}, status=status.HTTP_400_BAD_REQUEST)
-
-    #     friend_request.status = status_value
-    #     friend_request.save()
-
-    #     if status_value == 'accepted':
-    #         # Optionally, you can create a notification or update friend counts here
-    #         pass
-
-    #     return Response(FriendRequestSerializer(friend_request).data, status=status.HTTP_200_OK)
-    
 
     def patch(self, request, pk):
         """Respond to a friend request (accept/reject or cancel if sender)"""
@@ -138,12 +121,14 @@ class FriendRequestView(APIView):
         # Accept/reject logic for recipient
         if friend_request.to_user == request.user:
             friend_request.status = status_value
+            friend_request.timestamp = timezone.now()  # Update timestamp manually
             friend_request.save()
             return Response(FriendRequestSerializer(friend_request).data, status=status.HTTP_200_OK)
 
         # Allow sender to cancel (rejected) only if still pending
         if friend_request.from_user == request.user and friend_request.status == 'pending' and status_value == 'rejected':
             friend_request.status = 'rejected'
+            friend_request.timestamp = timezone.now()  # Update timestamp manually
             friend_request.save()
             return Response(FriendRequestSerializer(friend_request).data, status=status.HTTP_200_OK)
 
@@ -229,33 +214,6 @@ class LikePostView(APIView):
             return Response({'error': 'You have not liked this post'}, status=400)
         like.delete()
         return Response({'message': 'Post unliked'}, status=204)
-
-# class LikePostView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-
-#     def post(self, request, post_id):
-#         post = Post.objects.filter(id=post_id).first()
-#         if not post:
-#             return Response({'error': 'Post not found'}, status=404)
-
-#         like = PostLike.objects.filter(post=post, user=request.user).first()
-#         if like:
-#             # User already liked it — remove like (toggle off)
-#             like.delete()
-#             return Response({'message': 'Post unliked'}, status=200)
-
-#         # Not liked yet — add like (toggle on)
-#         PostLike.objects.create(post=post, user=request.user)
-
-#         if post.author != request.user:
-#             Notification.objects.create(
-#                 user=post.author,
-#                 from_user=request.user,
-#                 message=f"@{request.user.username} liked your post.",
-#                 type='like'
-#             )
-
-#         return Response({'message': 'Post liked'}, status=201)
 
 
 
