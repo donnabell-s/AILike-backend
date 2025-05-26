@@ -170,11 +170,6 @@ class PostListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
         
-        try:
-           patch_bio(post.author.id) 
-        except Exception as e:
-            print(f"Error while summarizing bio for user {post.author.id}: {e}")
-
 
 
 class LikePostView(APIView):
