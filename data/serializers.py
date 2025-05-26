@@ -4,6 +4,8 @@ from django.core.files import File
 from django.conf import settings
 import os
 from .models import User, FriendRequest, Post, PostLike, Notification, Topic
+import os
+from django.conf import settings
 
 
 class UserSerializer(serializers.ModelSerializer):
