@@ -15,15 +15,18 @@ class User(AbstractUser):
     profile_picture_blob = models.BinaryField(null=True, blank=True)
     header_picture_blob = models.BinaryField(null=True, blank=True)
     
+class Topic(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    sentiment = models.CharField(max_length=20, blank=True, null=True)
+    sentiment_score = models.FloatField(blank=True, null=True)
+
+
 class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
     content = models.TextField()
-    topics = models.JSONField(default=list, blank=True)
-    sentiment = models.CharField(max_length=20, blank=True, null=True)        # already added
-    sentiment_score = models.FloatField(blank=True, null=True)                # 👈 ADD THIS
+    topics = models.ManyToManyField(Topic, related_name='posts')
     created_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='liked_posts', through='PostLike')
-
 
 class FriendRequest(models.Model):
     STATUS_CHOICES = [

@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from data.views import UserDetailView, UserListView, CurrentUserView, UserProfilePictureView, UserHeaderPictureView ,RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView
+from data.views import UserDetailView, UserListView, CurrentUserView, UserProfilePictureView, UserHeaderPictureView ,RegisterView, FriendRequestView, FriendsListView, PostListCreateView, LikePostView, NotificationListView,TopicListCreateView,TopicRetrieveUpdateDestroyView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -33,6 +33,8 @@ urlpatterns = [
     path('api/friends/requests/<int:pk>/', FriendRequestView.as_view(), name='friend-request-respond'),
     path('api/friends/', FriendsListView.as_view(), name='friend-list'),
     path('api/posts/', PostListCreateView.as_view(), name='post-list-create'),
+    path('topics/', TopicListCreateView.as_view(), name='topic-list-create'),
+    path('topics/<int:pk>/', TopicRetrieveUpdateDestroyView.as_view(), name='topic-detail'),
     path('api/posts/<int:post_id>/like/', LikePostView.as_view(), name='like-post'),
     path('api/notifications/', NotificationListView.as_view(), name='notification-list'),
     path('api/notifications/<int:pk>/', NotificationListView.as_view(), name='notification-update-delete'),

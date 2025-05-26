@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, FriendRequest, Post, PostLike, Notification
+from .models import User, FriendRequest, Post, PostLike, Notification, Topic
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -83,13 +83,23 @@ class PostLikeSerializer(serializers.ModelSerializer):
         model = PostLike
         fields = ['id', 'post', 'user', 'liked_at']
 
+class TopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Topic
+        fields = ['id', 'name', 'sentiment', 'sentiment_score']
+
 
 class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
+    topic_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Topic.objects.all(),
+        source='topics'  # maps to the actual M2M field
+    )
 
     class Meta:
         model = Post
-        fields = ['id', 'author', 'content', 'topics', 'created_at', 'likes']
+        fields = ['id', 'author', 'content', 'topic_ids', 'created_at', 'likes']
         read_only_fields = ['author', 'likes']
 
 
