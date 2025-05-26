@@ -1,97 +1,118 @@
-from data.models import User, UserMatch, UserEmbedding,Post
+from data.models import User, UserMatch, UserEmbedding, Post
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity as cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from django.core.exceptions import ObjectDoesNotExist
 from transformers import pipeline
 import os
-
+from collections import defaultdict
 
 os.environ["TRANSFORMERS_NO_TF"] = "1"
 
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-sentiment_pipeline = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
+sentiment_pipeline = pipeline(
+    "sentiment-analysis",
+    model="cardiffnlp/twitter-roberta-base-sentiment-latest"
+)
 topic_pipeline = pipeline("zero-shot-classification", model="MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli")
 
+
 topic_labels = [
-            "Technology", "Health", "Politics", "Sports", "Entertainment",
-            "Education", "Business", "Environment", "Fashion", "Travel",
-            "Food", "Science", "Gaming", "Finance", "Relationships",
-            "Art", "History", "Music", "Movies", "Television",
-            "Literature", "Psychology", "Philosophy", "Religion", "Parenting",
-            "Career", "Productivity", "Self-Improvement", "Mental Health", "Fitness",
-            "Spirituality", "Pets", "Automotive", "Real Estate", "Marketing",
-            "Entrepreneurship", "Economics", "Law", "Medicine", "AI",
-            "Machine Learning", "Data Science", "Programming", "Cybersecurity", "Cryptocurrency",
-            "Social Media", "Memes", "News", "Climate Change", "Politics (Global)",
-            "Politics (Local)", "Startups", "Investing", "Photography", "Writing",
-            "Poetry", "Comics", "Languages", "DIY", "Design", "Cats", "Dogs",
-            "Birds", "Reptiles", "Fish", "Rodents", "Animals", "Humor", "Emotions",
-            "Mental Health", "Education", "School Life", "Rants",
-            "Frustration", "Student Experience", "Classmates", "Venting", "Conflict",
+    # Core Interests
+    "Technology", "Health", "Politics", "Sports", "Entertainment",
+    "Education", "Business", "Environment", "Fashion", "Travel",
+    "Food", "Science", "Gaming", "Finance", "Relationships",
+
+    # Arts & Culture
+    "Art", "History", "Music", "Movies", "Television",
+    "Literature", "Poetry", "Comics", "Writing", "Photography",
+    "Design", "Languages",
+
+    # Mind & Self
+    "Psychology", "Philosophy", "Religion", "Parenting",
+    "Mental Health", "Self-Improvement", "Spirituality", "Productivity", "Fitness",
+
+    # Career & Work
+    "Career", "Entrepreneurship", "Startups", "Marketing",
+    "Economics", "Law", "Medicine", "Investing", "Real Estate",
+
+    # Technology Subdomains
+    "AI", "Machine Learning", "Data Science", "Programming", "Cybersecurity", "Cryptocurrency",
+
+    # Social & Culture
+    "Social Media", "Memes", "News", "Climate Change",
+    "Humor", "Emotions", "Conflict", "Rants", "Venting",
+
+    # Animals & Pets
+    "Cats", "Dogs", "Birds", "Reptiles", "Fish", "Rodents", "Animals",
+
+    # School / Student Life
+    "School Life", "Student Experience", "Classmates",
+
+    # Hobbies & Misc
+    "DIY", "Crafts", "Board Games", "Minimalism", "Ethics", "Addiction", "Astrology",
+    "Workplace Culture", "Men's Issues", "Women's Rights", "Neuroscience"
 ]
 
-def topic_classifier(post_id, threshold=0.5):
+
+def topic_classifier(content, threshold=0.5):
     try:
-        post = Post.objects.get(id=post_id)
-        content = post.content
-
         result = topic_pipeline(content, candidate_labels=topic_labels, multi_label=True)
-
-        filtered_topics = [
-            label for label, score in zip(result["labels"], result["scores"]) if score >= threshold
+        return [
+            (label, score) for label, score in zip(result["labels"], result["scores"]) if score >= threshold
         ]
-
-        return filtered_topics if filtered_topics else ["No strong topic match"]
-
-    except Post.DoesNotExist:
-        return "Post not found."
+    except Exception as e:
+        print("Topic classifier failed:", e)
+        return []
 
 
+# =========================================
+# AUTO PROFILE EMBEDDING
+# =========================================
 
-
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-
-#EMBEDDING PROCESS
-def auto_profile_embedding(user_id):  # MAIN CALL
-    print("AUTO- Embedding in progress")
+def auto_profile_embedding(user_id):
+    print("AUTO - Embedding in progress")
     try:
         user = User.objects.get(id=user_id)
-        user_posts = Post.objects.filter(author=user_id)
+        user_posts = Post.objects.filter(author=user_id).prefetch_related("topics")
     except User.DoesNotExist:
         return {"error": "User not found."}
 
-    # Aggregate all (topic name, sentiment_score, sentiment) from the user's posts
-    all_topics = []
-    for post in user_posts.prefetch_related("topics"):
+    # Group (topic, sentiment) → list of scores
+    topic_weight_map = defaultdict(list)
+
+    for post in user_posts:
         for topic in post.topics.all():
             if topic.sentiment_score is not None and topic.sentiment:
-                all_topics.append((topic.name, topic.sentiment_score, topic.sentiment.lower()))
+                key = (topic.name, topic.sentiment.lower())
+                topic_weight_map[key].append(topic.sentiment_score)
 
-    # Build sentiment phrases from all topics
-    phrased_topics = [sentiment_to_phrase(t, s, sen) for t, s, sen in all_topics]
-
-    # Create new embedding from phrased topics
-    embedding_vector = profile_embedding(all_topics)
-    if embedding_vector is None:
+    if not topic_weight_map:
         return {"error": "No topics found to embed."}
 
-    # Save/update UserEmbedding
+    # Average and prepare for embedding
+    averaged_topics = [(t, sum(scores)/len(scores), s) for (t, s), scores in topic_weight_map.items()]
+
+    # Build embedding
+    embedding_vector = profile_embedding(averaged_topics)
+
+    # Save
     user_embedding, created = UserEmbedding.objects.get_or_create(user=user)
     user_embedding.set_embedding(embedding_vector.tolist())
     user_embedding.save()
+
+    # Build phrases to return
+    phrased_topics = [sentiment_to_phrase(t, score, s) for (t, score, s) in averaged_topics]
 
     return {
         "status": "success",
         "user_id": user.id,
         "username": user.username,
         "created": created,
-        "all_topics": all_topics,
+        "all_topics": averaged_topics,
         "phrased_topics": phrased_topics,
         "embedding": embedding_vector.tolist()
     }
-
-
 
 def profile_embedding(topics):
     phrases = [sentiment_to_phrase(topic, score, sentiment) for topic, score, sentiment in topics]
@@ -149,24 +170,23 @@ def sentiment_to_phrase(topic, intensity, sentiment):
 
     return f"I'm neutral about {topic}."  # fallback
 
+# =========================================
+# MATCHING PROCESS
+# =========================================
 
-#MATCHING PROCESS
-def top_10_matches_and_save(user_id):  # MAIN CALL
+def top_10_matches_and_save(user_id):
     try:
-        # Get this user's embedding
         user_embedding_obj = UserEmbedding.objects.get(user__id=user_id)
         user_emb = np.array(user_embedding_obj.get_embedding()).reshape(1, -1)
 
         similarities = []
 
-        # Compare with all other users
         other_users = UserEmbedding.objects.exclude(user__id=user_id).select_related('user').order_by('user__id')
         for other_embedding in other_users:
             other_user = other_embedding.user
             other_emb = np.array(other_embedding.get_embedding()).reshape(1, -1)
 
-            # Use sklearn's cosine similarity
-            sim = cosine_similarity(user_emb, other_emb)[0][0]  # float between 0 and 1
+            sim = cosine_similarity(user_emb, other_emb)[0][0]
             similarity_score = round(sim, 4)
             compatibility_percent = f"{round(sim * 100)}%"
 
@@ -176,10 +196,8 @@ def top_10_matches_and_save(user_id):  # MAIN CALL
                 "compatibility": compatibility_percent
             })
 
-        # Sort by similarity, descending
         top_matches = sorted(similarities, key=lambda x: x["similarity"], reverse=True)[:10]
 
-        # Remove old matches and save new ones
         UserMatch.objects.filter(user_id=user_id).delete()
         for match in top_matches:
             UserMatch.objects.create(
@@ -188,7 +206,6 @@ def top_10_matches_and_save(user_id):  # MAIN CALL
                 similarity_score=match["similarity"]
             )
 
-        # Return list of top matches
         return [{
             "user_id": match["user"].id,
             "username": match["user"].username,
@@ -199,7 +216,6 @@ def top_10_matches_and_save(user_id):  # MAIN CALL
     except UserEmbedding.DoesNotExist:
         return {"error": "User embedding not found."}
 
-# ✅ Compute cosine similarity between two user IDs for testing
 def cosine_similarity_between_users(user1_id, user2_id):
     try:
         user1_emb = UserEmbedding.objects.get(user__id=user1_id)

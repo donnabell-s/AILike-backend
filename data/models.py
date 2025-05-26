@@ -19,7 +19,7 @@ class User(AbstractUser):
   
     
 class Topic(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
     sentiment = models.CharField(max_length=20, blank=True, null=True)
     sentiment_score = models.FloatField(blank=True, null=True)
 
