@@ -23,9 +23,12 @@ topic_labels = [
     "Education", "Business", "Environment", "Fashion", "Travel",
     "Food", "Science", "Gaming", "Finance", "Relationships",
 
+    # Pop Culture & Fandoms
+    "Anime", "Manga", "Comics", "Cartoons", "TV Shows", "Movies", "K-Pop", "Celebrities", "Fan Fiction",
+
     # Arts & Culture
-    "Art", "History", "Music", "Movies", "Television",
-    "Literature", "Poetry", "Comics", "Writing", "Photography",
+    "Art", "History", "Music", "Theatre", "Dance",
+    "Television", "Literature", "Poetry", "Writing", "Photography",
     "Design", "Languages",
 
     # Mind & Self
@@ -37,7 +40,10 @@ topic_labels = [
     "Economics", "Law", "Medicine", "Investing", "Real Estate",
 
     # Technology Subdomains
-    "AI", "Machine Learning", "Data Science", "Programming", "Cybersecurity", "Cryptocurrency",
+    "AI", "Machine Learning", "Data Science", "Programming", "Cybersecurity", "Cryptocurrency", "Web Development",
+
+    # Sports & Recreation
+    "Football", "Basketball", "Soccer", "Tennis", "Martial Arts", "Esports", "Skating", "Gym", "Outdoor Activities",
 
     # Social & Culture
     "Social Media", "Memes", "News", "Climate Change",
@@ -47,10 +53,10 @@ topic_labels = [
     "Cats", "Dogs", "Birds", "Reptiles", "Fish", "Rodents", "Animals",
 
     # School / Student Life
-    "School Life", "Student Experience", "Classmates",
+    "School Life", "Student Experience", "Classmates", "Homework", "Exams", "College Life",
 
     # Hobbies & Misc
-    "DIY", "Crafts", "Board Games", "Minimalism", "Ethics", "Addiction", "Astrology",
+    "DIY", "Crafts", "Board Games", "Video Games", "Collecting", "Minimalism", "Ethics", "Addiction", "Astrology",
     "Workplace Culture", "Men's Issues", "Women's Rights", "Neuroscience"
 ]
 

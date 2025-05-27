@@ -36,22 +36,40 @@ def summarize_bio(user_id):
     full_name = f"{user.first_name} {user.last_name}"
     posts_content = "\n".join([post.content for post in user_posts])
     
-    prompt = (
-      f"""Based on the following user-generated posts, write a witty, slightly roasty, first-person social media app bio under 30 words.
-        Highlight what they like, their personality traits, and any funny quirks or contradictions — but do **not invent** anything that isn't clearly stated in the posts or biography.
+    # prompt = (
+    #   f"""Based on the following user-generated posts, write a witty, slightly roasty, first-person social media app bio under 30 words.
+    #     Highlight what they like, their personality traits, and any funny quirks or contradictions — but do **not invent** anything that isn't clearly stated in the posts or biography.
 
-        Use only the following verifiable information:
-        - Pronouns: {pronouns}
-        - Birthday: {bday}
-        - Full name: {full_name}
-        - Posts: {posts_content}
+    #     Use only the following verifiable information:
+    #     - Pronouns: {pronouns}
+    #     - Birthday: {bday}
+    #     - Full name: {full_name}
+    #     - Posts: {posts_content}
 
-        You may include the user's name **only if it fits naturally into the tone and flow** of the bio — avoid forced or robotic use.
+    #     You may include the user's name **only if it fits naturally into the tone and flow** of the bio — avoid forced or robotic use.
 
-        Integrate pronouns naturally into the sentence structure. Keep the tone playful, insightful, and accurate. Output only the final bio text."""
+    #     Integrate pronouns naturally into the sentence structure. Keep the tone playful, insightful, and accurate. Output only the final bio text."""
 
-    )
-    # print(f"Generated Prompt for Summarization: \n{prompt}\n")
+    # )
+
+    prompt = f"""
+    You are writing a witty, self-aware, first-person social media bio, under 30 words, **as if you are the user**.
+
+    Use the user’s posts as the main source to reflect their personality, interests, quirks, and contradictions — especially anything funny, passionate, or ironic.
+
+    Only use the following verifiable data for internal context — do not include it in the output unless it fits naturally:
+    - Pronouns: {pronouns}
+    - Birthday: {bday}
+    - Full name: {full_name}
+
+    Use only what is actually evident from the posts. Do not invent or exaggerate. Do not refer to the user in the third person. Do not awkwardly insert pronouns or names. The tone should feel playful, sharp, confident, or lightly self-deprecating — whatever fits the content best.
+
+    Posts:
+    {posts_content}
+
+    Write just the final bio, from the user’s point of view.
+    """
+
 
 
     headers = {

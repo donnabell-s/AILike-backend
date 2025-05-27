@@ -31,6 +31,10 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
     
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+    
+    
 class UserProfilePictureView(APIView):
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
